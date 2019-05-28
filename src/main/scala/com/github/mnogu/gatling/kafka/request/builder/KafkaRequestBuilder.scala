@@ -26,4 +26,7 @@ case class KafkaRequestBuilder(requestName: Expression[String]) {
   def sendAvro[T](schema: SchemaFor[T], format: RecordFormat[T], fromRecord: FromRecord[T], payload: Expression[T]) =
     new KafkaAvro4sActionBuilder(Avro4sAttributes(requestName, schema, format, fromRecord, payload))
 
+  def sendAvro[T](payload: Expression[T])(implicit schema: SchemaFor[T], format: RecordFormat[T], fromRecord: FromRecord[T]) =
+    new KafkaAvro4sActionBuilder(Avro4sAttributes(requestName, schema, format, fromRecord, payload))
+
 }
