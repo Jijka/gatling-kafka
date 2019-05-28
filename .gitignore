@@ -72,4 +72,6 @@ project/plugins/project/
 .classpath
 .settings/*
 
-
+# Visual Code Metals specific
+/.bloop/
+/.metals/
