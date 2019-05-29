@@ -10,14 +10,14 @@ import org.apache.kafka.clients.producer.KafkaProducer
 
 import scala.collection.JavaConverters._
 
-class KafkaAvro4sActionBuilder[T](avro4sAttributes: Avro4sAttributes[T]) extends ActionBuilder {
+class KafkaAvro4sActionBuilder[K, V](avro4sAttributes: Avro4sAttributes[K, V]) extends ActionBuilder {
 
   override def build(ctx: ScenarioContext, next: Action): Action = {
     import ctx._
 
     val kafkaComponents: KafkaComponents = protocolComponentsRegistry.components(KafkaProtocol.KafkaProtocolKey)
 
-    val producer = new KafkaProducer[Nothing, GenericRecord](kafkaComponents.kafkaProtocol.properties.asJava)
+    val producer = new KafkaProducer[K, GenericRecord](kafkaComponents.kafkaProtocol.properties.asJava)
 
     coreComponents.actorSystem.registerOnTermination(producer.close())
 

@@ -36,11 +36,11 @@ class Avro4sSimulation extends Simulation {
     .exec(
       kafka("Simple Request")
       // message to send
-        .sendAvro[Ingredient](ingridientScemaFor, ingridientFormat, ingridientFromRecord, Ingredient("Cheese", 0d, 70d)))
-    .exec(
-      kafka("Implicit Request")
-      // message to send
         .sendAvro[Ingredient](Ingredient("Cheese", 0d, 70d)))
+    .exec(
+      kafka("Simple Request with Key")
+      // message to send
+        .sendAvro[String, Ingredient]("Key", Ingredient("Cheese", 0d, 70d)))
 
   setUp(
     scn

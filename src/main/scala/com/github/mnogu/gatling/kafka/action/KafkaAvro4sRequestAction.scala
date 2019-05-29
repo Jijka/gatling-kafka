@@ -8,22 +8,21 @@ import io.gatling.commons.validation.Validation
 import io.gatling.core.CoreComponents
 import io.gatling.core.action.{Action, ExitableAction}
 import io.gatling.core.session._
-import io.gatling.core.stats.StatsEngine
 import io.gatling.core.util.NameGen
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.producer._
 
-class KafkaAvro4sRequestAction[T](val producer: KafkaProducer[Nothing, GenericRecord],
-                                  val avro4sAttributes: Avro4sAttributes[T],
-                                  val coreComponents: CoreComponents,
-                                  val kafkaProtocol: KafkaProtocol,
-                                  val throttled: Boolean,
-                                  val next: Action)
-    extends ExitableAction with NameGen {
+class KafkaAvro4sRequestAction[K, V](val producer: KafkaProducer[K, GenericRecord],
+                                     val avro4sAttributes: Avro4sAttributes[K, V],
+                                     val coreComponents: CoreComponents,
+                                     val kafkaProtocol: KafkaProtocol,
+                                     val throttled: Boolean,
+                                     val next: Action)
+  extends ExitableAction with NameGen {
 
-  val statsEngine: StatsEngine = coreComponents.statsEngine
-  val clock: DefaultClock      = new DefaultClock
-  override val name: String    = genName("kafkaAvroRequest")
+  val statsEngine   = coreComponents.statsEngine
+  val clock         = new DefaultClock
+  override val name = genName("kafkaAvroRequest")
 
   override def execute(session: Session): Unit = recover(session) {
     avro4sAttributes requestName session flatMap { requestName =>
@@ -38,13 +37,15 @@ class KafkaAvro4sRequestAction[T](val producer: KafkaProducer[Nothing, GenericRe
   }
 
   def sendRequest(requestName: String,
-                  producer: KafkaProducer[Nothing, GenericRecord],
-                  avro4sAttributes: Avro4sAttributes[T],
+                  producer: KafkaProducer[K, GenericRecord],
+                  avro4sAttributes: Avro4sAttributes[K, V],
                   throttled: Boolean,
                   session: Session): Validation[Unit] = {
 
     avro4sAttributes payload session map { payload =>
-      val record = new ProducerRecord(kafkaProtocol.topic, avro4sAttributes.format.to(payload))
+      val record = avro4sAttributes.key
+        .map(k => new ProducerRecord(kafkaProtocol.topic, k(session).toOption.get, avro4sAttributes.format.to(payload)))
+        .getOrElse(new ProducerRecord(kafkaProtocol.topic, avro4sAttributes.format.to(payload)))
 
       val requestStartDate = clock.nowMillis
 
